@@ -1,76 +1,64 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import type { User } from '../types/User';
-import usersService from '../services/users-service';
+import { onMounted, ref } from "vue";
+import Doughnut from "../components/Doughnut/index.vue";
+import MainButton from "../components/MainButton/index.vue";
+import type { User } from "../types/User";
+import { useUsersStore } from "../store/users";
 
-const users = ref<User[]>([])
+const userStore = useUsersStore();
 
+const users = ref<User[]>([]);
+const listUsersMessage = ref<string>("Nenhum usuário encontrado");
 
-async function getUsers() {
-    try {
-        const response = await usersService.getAll()
-        if (!response) {
-            alert('Erro ao buscar usuarios')
-            return 
-        }
-
-        users.value = response.data
-    } catch (error) {
-        return error
-    }
+async function mountUsersList() {
+  await userStore.getAll()
+  users.value = userStore.$state.users;
 }
 
-async function removeUsers() {
-    alert('Deletar usuarios')
-    try {
-        const response = await usersService.removeAll()
-        console.log(response)
-        if (!response) {
-            alert('Erro ao deletar usuarios')
-            return 
-        }
-
-        getUsers()
-    } catch (error) {
-        return error   
-    }
-}
-
-onMounted(() => {
-    getUsers()
-})
+onMounted(async () => {
+  await mountUsersList();
+});
 </script>
 
 <template>
-    <div>
-        <div>
-            <button 
-                @click="removeUsers"
-                class="bg-slate-200 w-32 h-10 rounded-lg text-slate-600 font-semibold cursor-pointer">
-                Deletar usuários
-            </button>
+  <div class="mx-10 my-4">
+    <div class="w-full mb-16 flex justify-between items-center">
+      <div class="min-w-1/2 bg-white rounded-lg">
+        <h3 class="my-4 ml-4">Total de usuários</h3>
+        <div class=" h-56 rounded-b-lg border-t-2 border-slate-200 flex justify-center items-center">
+          <Doughnut />
         </div>
-        <div v-if="!users.length" class="w-full h-full flex justify-center items-center">
-            <span class="text-slate-400 font-semibold">Nenhum usuário encontrado</span>
-        </div>
-        <ul v-else class="w-full h-full bg-slate-100 spacing">
-            <li 
-                class="w-full h-16 bg-slate-50 border-b-2 border-slate-200 flex justify-between items-center px-4"
-                v-for="user in users" :key="user.id"
-            >
-                <div>
-                    {{ user.nome }} - {{ user.email }}
-                </div>
-                <div>
-                    ações
-                </div>
-            </li> 
-        </ul>
+      </div>
+      <div>
+        <MainButton>
+          Deletar usuários
+        </MainButton>
+      </div>
     </div>
+    <div
+      v-if="!users.length"
+      class="w-full h-full flex justify-center items-center"
+    >
+      <span class="text-slate-400 font-semibold">{{ listUsersMessage }}</span>
+    </div>
+    <ul v-else class="w-full h-full bg-slate-100 spacing">
+      <li
+        class="w-full h-16 bg-slate-50 border-b-2 border-slate-200 flex justify-between items-center px-4"
+        v-for="user in users"
+        :key="user.id"
+      >
+        <div>
+          <div class="flex">
+            <span class="bg-red-400 text-zinc-50 w-[40px] h-[40px] flex justify-center items-center rounded-full mr-4">
+              {{ user.nome.charAt(0).toUpperCase() }}
+            </span>
+            <div class="flex items-center">
+              {{ user.nome }} - {{ user.email }}
+            </div>
+          </div>
+        </div>
+        <div>ações</div>
+      </li>
+    </ul>
+  </div>
 </template>
-
-<style scoped>
-.spacing {
-    margin: 0 20px;
-}
-</style>
